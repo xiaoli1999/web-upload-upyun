@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>又拍云上传文件</title>
+    <link rel="shortcut icon" href="./favicon.png" type="image/png">
+    <link rel="stylesheet" href="./css/index.css" />
+    <script src="./js/vue.js"></script>
+    <script src="https://cdn.xiaoli.vip/tools/upyun/hash.js"></script>
+</head>
+<body>
+<div id="app">
+    {{ message }}
+</div>
+
+</body>
+
+<script>
+	const App = {
+		data() {
+			return {
+				message: "又拍云上传文件",
+			};
+		}
+	};
+	const app = Vue.createApp(App);
+	app.use(ElementPlus);
+	app.mount("#app");
+</script>
+</html>
