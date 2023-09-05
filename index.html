@@ -6,11 +6,12 @@
     <link rel="shortcut icon" href="./favicon.png" type="image/png">
     <link rel="stylesheet" href="./css/index.css" />
     <script src="./js/vue.js"></script>
+    <script src="./js/axios.js"></script>
     <script src="https://cdn.xiaoli.vip/tools/upyun/hash.js"></script>
 </head>
 <body>
 <div id="app">
-    {{ message }}
+    <input class="" id="upload" type="file" accept=".jpg,.png" @change="uploadImg" />
 </div>
 
 </body>
@@ -19,12 +20,55 @@
 	const App = {
 		data() {
 			return {
-				message: "又拍云上传文件",
+				bucket: 'xiaoli-test',
+                username: 'test',
+                password: '0LjHlUNs8n0RWbEPi3c0BB3dOJBkfhwd',
+                path: '/img',
+                cdnUrl: 'http://xiaoli-test.test.upcdn.net'
 			};
-		}
+		},
+        methods: {
+			uploadImg (e) {
+				const file = e.target.files[0]
+
+                /* 创建FormData */
+                const uploadData = new FormData()
+				uploadData.append('file', file);
+
+				const url = `https://v0.api.upyun.com/${ this.bucket }`
+
+				/* 计算policy */
+                const policyObj = {
+					bucket: this.bucket,
+					'save-key': `${ this.path }/{filename}{.suffix}`,
+					expiration: new Date().getTime() + 600, /* 过期时间，在当前时间+10分钟 */
+				}
+				console.log(policyObj)
+				const policy =  btoa(JSON.stringify(policyObj))
+				uploadData.append('policy', policy);
+
+                /* 计算 Authorization */
+                const passwordMd5 = HexMD5.MD5(this.password).toString(HexMD5.enc.Hex)
+                /* [Method-请求方法, URI-请求路径, policy] */
+                const arr = ['POST', `/${ this.bucket }`, policy]
+				console.log('arr', arr.join('&'))
+
+                const authorization = `UPYUN ${ this.username }:${ b64hamcsha1(passwordMd5, arr.join('&')) }`
+				uploadData.append('authorization', authorization);
+
+				axios({ method: 'POST', url, data: uploadData }).then((res) => {
+                    console.log('上传成功！', res);
+					console.log(this.cdnUrl + res.data.url)
+                }).catch(e => {
+					console.log(e)
+                })
+
+				/* 清除input的值，解决二次上传文件未触发 */
+                document.getElementById('upload').value = ''
+            }
+        }
 	};
 	const app = Vue.createApp(App);
-	app.use(ElementPlus);
 	app.mount("#app");
 </script>
 </html>
