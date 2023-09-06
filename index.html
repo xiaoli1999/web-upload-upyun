@@ -11,7 +11,40 @@
 </head>
 <body>
 <div id="app">
-    <input class="" id="upload" type="file" accept=".jpg,.png" @change="uploadImg" />
+    <h2>又拍云上传文件（图片版）</h2>
+    <div class="img-upload">
+        <img v-if="imgLocalUrl" :src="imgLocalUrl" alt="">
+        <div v-else>+</div>
+        <input id="upload" type="file" accept=".jpg,.png" @change="uploadImg" />
+    </div>
+    <div class="config">
+        <div class="config-line">
+            <div>云存储服务名</div>
+            <input type="text" v-model="bucket" placeholder="请输入云存储服务名称" />
+        </div>
+        <div class="config-line">
+            <div>操作员</div>
+            <input type="text" v-model="username" placeholder="请输入操作员名称" />
+        </div>
+        <div class="config-line">
+            <div>密码</div>
+            <input type="text" v-model="password" placeholder="请输入密码" />
+        </div>
+        <div class="config-line">
+            <div>上传路径</div>
+            <input type="text" v-model="path" placeholder="请输入上传路径" />
+        </div>
+        <div class="config-line">
+            <div>测试域名</div>
+            <input type="text" v-model="testCdnUrl" placeholder="请输入测试域名" />
+        </div>
+    </div>
+    <div class="preview-list">
+        <div v-for="item in uploadImgList" :key="item">
+            <img :src="item" alt="">
+            <a :href="item" target="_blank">{{ item }}</a>
+        </div>
+    </div>
 </div>
 
 </body>
@@ -24,12 +57,15 @@
                 username: 'test',
                 password: '0LjHlUNs8n0RWbEPi3c0BB3dOJBkfhwd',
                 path: '/img',
-                cdnUrl: 'http://xiaoli-test.test.upcdn.net'
+                testCdnUrl: 'http://xiaoli-test.test.upcdn.net',
+                imgLocalUrl: '',
+                uploadImgList: []
 			};
 		},
         methods: {
 			uploadImg (e) {
 				const file = e.target.files[0]
+				this.imgLocalUrl = URL.createObjectURL(file)
 
                 /* 创建FormData */
                 const uploadData = new FormData()
@@ -43,24 +79,24 @@
 					'save-key': `${ this.path }/{filename}{.suffix}`,
 					expiration: new Date().getTime() + 600, /* 过期时间，在当前时间+10分钟 */
 				}
-				console.log(policyObj)
 				const policy =  btoa(JSON.stringify(policyObj))
 				uploadData.append('policy', policy);
 
+
                 /* 计算 Authorization */
                 const passwordMd5 = HexMD5.MD5(this.password).toString(HexMD5.enc.Hex)
+
                 /* [Method-请求方法, URI-请求路径, policy] */
                 const arr = ['POST', `/${ this.bucket }`, policy]
-				console.log('arr', arr.join('&'))
 
                 const authorization = `UPYUN ${ this.username }:${ b64hamcsha1(passwordMd5, arr.join('&')) }`
 				uploadData.append('authorization', authorization);
 
 				axios({ method: 'POST', url, data: uploadData }).then((res) => {
-                    console.log('上传成功！', res);
-					console.log(this.cdnUrl + res.data.url)
+					this.uploadImgList.push(this.testCdnUrl + res.data.url)
                 }).catch(e => {
-					console.log(e)
+					console.error('上传失败', e)
+					alert('上传失败')
                 })
 
 				/* 清除input的值，解决二次上传文件未触发 */
